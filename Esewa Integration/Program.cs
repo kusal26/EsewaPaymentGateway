@@ -1,42 +1,40 @@
+using Esewa_Integration.Services.ESewa;
+using Esewa_Integration.Services.Khalti;
+using Refit;
 
-using Esewa_Integration.Services;
+var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
 
-namespace Esewa_Integration
+var khaltiSecretKey = configuration.GetValue<string>("Khalti:live_secret_key");
+var khaltiBaseUrl = configuration.GetValue<string>("Khalti:BaseUrl");
+
+builder.Services.AddControllers();
+
+builder.Services.AddTransient<IEsewaService, EsewaService>();
+builder.Services.AddTransient<IKhaltiService, KhaltiService>();
+builder.Services.AddTransient<AuthorizationHandler>(provider =>
+    new AuthorizationHandler(khaltiSecretKey));
+
+builder.Services.AddRefitClient<IKhaltiApi>()
+    .ConfigureHttpClient(client => client.BaseAddress = new Uri(khaltiBaseUrl))
+    .AddHttpMessageHandler<AuthorizationHandler>();
+
+builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
-
-            builder.Services.AddControllers();
-            builder.Services.AddTransient<IEsewaService, EsewaService>();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
-            builder.Services.AddEndpointsApiExplorer();
-            //builder.Services.AddSwaggerGen();
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                //    app.UseSwagger();
-                //    app.UseSwaggerUI();
-                app.UseDeveloperExceptionPage();
-                app.MapOpenApi();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthorization();
-
-
-            app.MapControllers();
-
-            app.Run();
-        }
-    }
+    app.UseDeveloperExceptionPage();
+    app.MapOpenApi();
 }
+
+app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+await app.RunAsync();
+

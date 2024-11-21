@@ -1,4 +1,4 @@
-﻿namespace Esewa_Integration.Dtos;
+﻿namespace Esewa_Integration.Dtos.ESewa;
 public class ESewaStatusCheckDto
 {
     public string product_code { get; set; }

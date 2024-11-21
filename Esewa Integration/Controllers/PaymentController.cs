@@ -1,4 +1,6 @@
-﻿using Esewa_Integration.Services;
+﻿using Esewa_Integration.Dtos.Khalti;
+using Esewa_Integration.Services.ESewa;
+using Esewa_Integration.Services.Khalti;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Esewa_Integration.Controllers
@@ -8,18 +10,22 @@ namespace Esewa_Integration.Controllers
     public class PaymentController : ControllerBase
     {
         private readonly IEsewaService _esewaService;
+        public readonly IKhaltiService _khaltiService;
 
-        public PaymentController(IEsewaService esewaService)
+        public readonly IConfiguration _configuration;
+
+        public PaymentController(
+            IEsewaService esewaService,
+            IKhaltiService khaltiService,
+            IConfiguration configuration
+            )
         {
             _esewaService = esewaService;
+            _khaltiService = khaltiService;
+            _configuration = configuration;
         }
-        [HttpPost]
-        public IActionResult PayViaESewa(string amount)
-        {
-            _esewaService.MakePayment(amount);
-            return Ok();
-        }
-        [HttpGet("Verify")]
+        //ESewa Payment Verification
+        [HttpGet("ESewaPaymentVerification")]
         public async Task<IActionResult> VerifyPayment(string data)
         {
             var (success, dto) = await _esewaService.VeirfyPayment(data);
@@ -28,6 +34,23 @@ namespace Esewa_Integration.Controllers
                 return BadRequest("Internal Error");
             }
             return Ok(dto);
+        }
+
+        [HttpPost("InitiateKhaltiPayment")]
+        public async Task<IActionResult> InitiateKhaltiPayment(int amount, string productName)
+        {
+            var returnUrl = _configuration.GetValue<string>("Khalti:ReturnUrl");
+            var websiteUrl = _configuration.GetValue<string>("Khalti:WebsiteUrl");
+            var requestDto = new PaymentRequestDto
+            {
+                return_url = returnUrl,
+                website_url = websiteUrl,
+                purchase_order_id = Guid.NewGuid().ToString(),
+                amount = amount,
+                purchase_order_name = productName
+            };
+            var response = await _khaltiService.PaymentRequest(requestDto);
+            return Ok(response);
         }
     }
 }

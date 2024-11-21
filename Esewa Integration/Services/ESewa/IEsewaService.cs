@@ -1,6 +1,6 @@
-﻿using Esewa_Integration.Dtos;
+﻿using Esewa_Integration.Dtos.ESewa;
 
-namespace Esewa_Integration.Services;
+namespace Esewa_Integration.Services.ESewa;
 public interface IEsewaService
 {
     // Task MakePayment(string input);
